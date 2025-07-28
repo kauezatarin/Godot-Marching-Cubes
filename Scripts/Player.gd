@@ -1,14 +1,15 @@
 extends CharacterBody3D
 
-
-@export var SPEED = 2.0
-@export var JUMP_VELOCITY = 5
+@export var SPEED: float = 2.0
+@export var JUMP_VELOCITY: float = 5.0
+@export var brush_strength: float = 0.5
+@export var brush_radius: int = 1
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
-#var gravity = 0
 
 @onready var camera = $Camera3D
 @onready var walk_sound: AudioStreamPlayer3D = $WalkSound
+@onready var parent: Terrain = $".."
 
 func _physics_process(delta):
     # Add the gravity.
@@ -38,6 +39,16 @@ func _physics_process(delta):
         velocity.z = move_toward(velocity.z, 0, SPEED)
 
     move_and_slide()
+
+func _input(event):
+    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+        var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+        var ray_settings: PhysicsRayQueryParameters3D  =  PhysicsRayQueryParameters3D.create($Camera3D.global_position, $Camera3D.project_ray_normal(event.position) * 1000, 0x1)
+        var result: Dictionary = space_state.intersect_ray(ray_settings)
+
+        if result:
+            var chunk: ChunkInstance = result.collider.get_parent()
+            parent.terraform_world(chunk, result.position, brush_strength, brush_radius)
 
 func _unhandled_input(event):
     if event is InputEventMouseButton:

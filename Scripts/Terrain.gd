@@ -1,3 +1,4 @@
+class_name Terrain
 extends Node3D
 
 @export	var MATERIAL: Material
@@ -7,20 +8,21 @@ extends Node3D
 @export var FLAT_SHADED: bool = false
 @export var TERRAIN_TERRACE: int = 1
 @export var RENDER_DISTANCE: int = 1  # Number of chunks to render around the player
-@export var MAX_HEIGHT: int = 16
 
 var CHUNK_SIZE: int = 49  # Fisical size of each chunk, for some reasol it is always 1 units small than RESOLUTION
 
 var player_position: Vector3  # Player position
-var loaded_chunks: Dictionary[String, MeshInstance3D] = {}  # Dictionary to store loaded chunks
+var loaded_chunks: Dictionary[String, ChunkInstance] = {}  # Dictionary to store loaded chunks
 
 var threads: Array[Thread]
 var loaded_chunks_mutex: Mutex
 var triangulation_array_mutex: Mutex
 
+const CHUNK_INSTANCE = preload("res://Scenes/chunk_instance.tscn")
+
 # Tri table to store all 256 combinations of geometry in
 # the form of edges through which our geometry cuts
-var TRIANGULATIONS: Array = [
+static var TRIANGULATIONS: Array = [
 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 [0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 [0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -279,7 +281,7 @@ var TRIANGULATIONS: Array = [
 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]]
 
 # Vertices of a cube
-var POINTS: Array[Vector3i] = [
+static var POINTS: Array[Vector3i] = [
     Vector3i(0, 0, 0),
     Vector3i(0, 0, 1),
     Vector3i(1, 0, 1),
@@ -292,7 +294,7 @@ var POINTS: Array[Vector3i] = [
 
 # Each edge represents pair of 2 vertices. EDGES[0] represents
 # first and second vertex in POINTS array.
-var EDGES: Array[Vector2i] = [
+static var EDGES: Array[Vector2i] = [
     Vector2i(0, 1),
     Vector2i(1, 2),
     Vector2i(2, 3),
@@ -315,7 +317,8 @@ func _ready() -> void:
     NOISE = FastNoiseLite.new()
     NOISE.noise_type = FastNoiseLite.TYPE_PERLIN
     # cool seed for test 98548
-    NOISE.seed = randi() % 10000000 + 1
+    #NOISE.seed = randi() % 10000000 + 1
+    NOISE.seed = 9988616
     print("world seed: %d" % NOISE.seed)
     loaded_chunks_mutex = Mutex.new()
     triangulation_array_mutex = Mutex.new()
@@ -358,22 +361,31 @@ func _process(_delta: float) -> void:
         if abs(chunk_x - player_chunk_x) > RENDER_DISTANCE or abs(chunk_z - player_chunk_z) > RENDER_DISTANCE:
             unload_chunk(chunk_x, chunk_z)
 
-    first_run = false
+    if first_run:
+        var chunk: ChunkInstance = loaded_chunks[str(player_chunk_x) + "," + str(player_chunk_z)]
+        var new_y: float = chunk.get_aabb().position.y + chunk.get_aabb().size.y + $Player/MeshInstance3D.get_aabb().size.y
+
+        $Player.position = Vector3($Player.position.x, new_y, $Player.position.z)
+        first_run = false
 
 func load_chunk(x: int, z: int) -> void:
     print("Thread gerando mesh: %s" % OS.get_thread_caller_id())
-    var chunk_mesh: ArrayMesh = generate_chunk_mesh(x, z)
-    var chunk_instance: MeshInstance3D = MeshInstance3D.new()
+    var chunk_voxel_grid: VoxelGrid = generate_voxel_grid(Vector3i(x, 0, z) * CHUNK_SIZE)
+    var chunk_mesh: ArrayMesh = generate_chunk_mesh(chunk_voxel_grid)
+    var chunk_instance: ChunkInstance = CHUNK_INSTANCE.instantiate()
     var aabb_size: Vector3 = chunk_mesh.get_aabb().size
     print("Thread terminou de gerar a mesh: %s" % OS.get_thread_caller_id())
 
     print("Thread criando colisão para a mesh: %s" % OS.get_thread_caller_id())
     chunk_instance.name = "Chunk_%d_%d" % [x, z]
     chunk_instance.mesh = chunk_mesh
+    chunk_instance.grid = chunk_voxel_grid
     chunk_instance.create_trimesh_collision.call_deferred()
     chunk_instance.position.x = x * aabb_size.x - aabb_size.x /2 #apply some offset to
     chunk_instance.position.z = z * aabb_size.z - aabb_size.z /2
     print("Thread terminou de criar a colisão para a mesh: %s" % OS.get_thread_caller_id())
+
+    #chunk_instance.debug = true
 
     add_child.call_deferred(chunk_instance)
 
@@ -397,38 +409,31 @@ func unload_chunk(x: int, z: int) -> void:
 
             print('UNLOAD CHNK')
 
-func generate_chunk_mesh(x: int, z: int) -> ArrayMesh:
-    var mesh: ArrayMesh = generate(Vector3i(x, 0, z) * CHUNK_SIZE)
-    return mesh
-
 func scalar_field(x: float, y: float, z: float) -> float:
     return (x * x + y * y + z * z)/60.0
 
-func generate(chunk_pos: Vector3i) -> ArrayMesh:
-    var voxel_grid = VoxelGrid.new(RESOLUTION)
+func generate_voxel_grid(chunk_pos: Vector3i) -> VoxelGrid:
+    var voxel_grid: VoxelGrid = VoxelGrid.new(RESOLUTION)
 
     #generate terrain
     for x in range(0, voxel_grid.resolution):
         for y in range(0, voxel_grid.resolution):
             for z in range(0, voxel_grid.resolution):
-                var value = NOISE.get_noise_3d(x + chunk_pos.x, y + chunk_pos.y, z + chunk_pos.z) + (y + y % TERRAIN_TERRACE) / float(voxel_grid.resolution) - 0.5
+                var value: float = NOISE.get_noise_3d(x + chunk_pos.x, y + chunk_pos.y, z + chunk_pos.z) + (y + y % TERRAIN_TERRACE) / float(voxel_grid.resolution) - 0.5
                 voxel_grid.write(x, y, z, value)
 
-                #uncomment to show labels
-                #var t = Label3D.new()
-                #t.text = "(%d, %d, %d)" % [x,y,z]
-                #t.position = Vector3(x,y,z)
-                #add_child(t)
+    return voxel_grid
 
+func generate_chunk_mesh(voxel_grid: VoxelGrid) -> ArrayMesh:
     #march
-    var vertices = PackedVector3Array()
+    var vertices: PackedVector3Array = PackedVector3Array()
     for x in voxel_grid.resolution-1:
         for y in voxel_grid.resolution-1:
             for z in voxel_grid.resolution-1:
                 march_cube(x, y, z, voxel_grid, vertices)
 
     #draw
-    var surface_tool = SurfaceTool.new()
+    var surface_tool: SurfaceTool = SurfaceTool.new()
     surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 
     surface_tool.set_color(Color.from_rgba8(randi() % 256,randi() % 256,randi() % 256, 255))
@@ -488,6 +493,28 @@ func get_triangulation(x: int, y: int, z: int, voxel_grid: VoxelGrid) -> Array:
     triangulation_array_mutex.unlock()
 
     return triangulation
+
+func terraform_world(chunk: ChunkInstance, global_pos: Vector3, strength: float, radius: int) -> void:
+    var local_pos = global_pos - chunk.global_position  # Posição relativa dentro do chunk
+
+    # Converter para voxel grid index
+    var voxel_pos = Vector3i(
+        clamp(int(local_pos.x), 0, RESOLUTION - 1),
+        clamp(int(local_pos.y), 0, RESOLUTION - 1),
+        clamp(int(local_pos.z), 0, RESOLUTION - 1)
+    )
+
+    chunk.grid.terraform(voxel_pos, strength, radius)
+
+    var updated_mesh = generate_chunk_mesh(chunk.grid)
+    chunk.mesh = updated_mesh
+
+    if chunk.debug:
+        chunk.remove_labels()
+        chunk.debug_grid()
+
+    chunk.remove_collision()
+    chunk.create_trimesh_collision()
 
 # Thread must be disposed (or "joined"), for portability.
 func _exit_tree():

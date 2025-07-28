@@ -1,13 +1,13 @@
 [gd_scene load_steps=16 format=3 uid="uid://gry0tmen17ax"]
 
-[ext_resource type="Script" uid="uid://mmdx5ewxdanu" path="res://Scripts/Player.gd" id="1_p1fk6"]
-[ext_resource type="Script" uid="uid://dg7iqwweyc66w" path="res://Scripts/Terrain.gd" id="2_7cs1q"]
-[ext_resource type="Material" uid="uid://bdteyiqc346w3" path="res://Materials/Wet_Mud.tres" id="2_r0du0"]
-[ext_resource type="AudioStream" uid="uid://dknruw0ckljl2" path="res://Sound/Stone Walk 1.wav" id="4_trn2v"]
-[ext_resource type="AudioStream" uid="uid://d4ch8m30gbpux" path="res://Sound/Stone Walk 2.wav" id="5_03owx"]
-[ext_resource type="AudioStream" uid="uid://dd1v4dc8ivvu2" path="res://Sound/Stone Walk 3.wav" id="6_wkp8b"]
-[ext_resource type="AudioStream" uid="uid://cj1y2wjyyb2l5" path="res://Sound/Stone Walk 4.wav" id="7_20pc6"]
-[ext_resource type="AudioStream" uid="uid://cv1x17jj0m0e2" path="res://Sound/Stone Walk 5.wav" id="8_5vvyt"]
+[ext_resource type="Script" uid="uid://dg7iqwweyc66w" path="res://Scripts/Terrain.gd" id="1_50glp"]
+[ext_resource type="Material" uid="uid://bdteyiqc346w3" path="res://Materials/Wet_Mud.tres" id="2_vy5pj"]
+[ext_resource type="Script" uid="uid://mmdx5ewxdanu" path="res://Scripts/Player.gd" id="3_bmxlf"]
+[ext_resource type="AudioStream" uid="uid://dknruw0ckljl2" path="res://Sound/Stone Walk 1.wav" id="4_4kpch"]
+[ext_resource type="AudioStream" uid="uid://d4ch8m30gbpux" path="res://Sound/Stone Walk 2.wav" id="5_grg3l"]
+[ext_resource type="AudioStream" uid="uid://dd1v4dc8ivvu2" path="res://Sound/Stone Walk 3.wav" id="6_frkhe"]
+[ext_resource type="AudioStream" uid="uid://cj1y2wjyyb2l5" path="res://Sound/Stone Walk 4.wav" id="7_1p5hy"]
+[ext_resource type="AudioStream" uid="uid://cv1x17jj0m0e2" path="res://Sound/Stone Walk 5.wav" id="8_h1m7h"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_uu6xs"]
 noise_type = 3
@@ -31,17 +31,16 @@ sky = SubResource("Sky_600cf")
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_c6i3y"]
 playback_mode = 2
 streams_count = 5
-stream_0/stream = ExtResource("4_trn2v")
-stream_1/stream = ExtResource("5_03owx")
-stream_2/stream = ExtResource("6_wkp8b")
-stream_3/stream = ExtResource("7_20pc6")
-stream_4/stream = ExtResource("8_5vvyt")
+stream_0/stream = ExtResource("4_4kpch")
+stream_1/stream = ExtResource("5_grg3l")
+stream_2/stream = ExtResource("6_frkhe")
+stream_3/stream = ExtResource("7_1p5hy")
+stream_4/stream = ExtResource("8_h1m7h")
 
 [node name="Node3D" type="Node3D"]
-script = ExtResource("2_7cs1q")
-MATERIAL = ExtResource("2_r0du0")
+script = ExtResource("1_50glp")
+MATERIAL = ExtResource("2_vy5pj")
 NOISE = SubResource("FastNoiseLite_uu6xs")
-RENDER_DISTANCE = 2
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.632016, 0.0338841, 0.774214, -0.774956, 0.0276342, 0.631411, -2.22045e-16, -0.999044, 0.043724, 0, 26.6943, -0.202007)
@@ -51,7 +50,9 @@ environment = SubResource("Environment_46867")
 
 [node name="Player" type="CharacterBody3D" parent="."]
 transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 40.27, 0)
-script = ExtResource("1_p1fk6")
+collision_layer = 2
+script = ExtResource("3_bmxlf")
+brush_strength = 0.1
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Player"]
 mesh = SubResource("CapsuleMesh_uu6xs")
