@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://dd1v4dc8ivvu2"
+path="res://.godot/imported/Stone Walk 3.wav-ea1b7992b2e6e38ecbdc92a0c6bbb3e0.sample"
+
+[deps]
+
+source_file="res://Sound/Stone Walk 3.wav"
+dest_files=["res://.godot/imported/Stone Walk 3.wav-ea1b7992b2e6e38ecbdc92a0c6bbb3e0.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

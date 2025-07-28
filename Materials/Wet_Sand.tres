@@ -1,0 +1,20 @@
+[gd_resource type="ORMMaterial3D" load_steps=5 format=3 uid="uid://wtpuly8eak4m"]
+
+[ext_resource type="Texture2D" uid="uid://bq1bfse04kgep" path="res://Textures/Wet_sand/Wet_sand_albedo.png" id="1_skkn3"]
+[ext_resource type="Texture2D" uid="uid://ogjj4l5fbw05" path="res://Textures/Wet_sand/Wet_sand_emission.png" id="2_iwvnt"]
+[ext_resource type="Texture2D" uid="uid://bejadtcsqnj4e" path="res://Textures/Wet_sand/Wet_sand_normal.png" id="3_4q2iy"]
+[ext_resource type="Texture2D" uid="uid://c045vkb0dwk0f" path="res://Textures/Wet_sand/Wet_sand_orm.png" id="4_wlail"]
+
+[resource]
+albedo_texture = ExtResource("1_skkn3")
+orm_texture = ExtResource("4_wlail")
+emission_enabled = true
+emission_texture = ExtResource("2_iwvnt")
+normal_enabled = true
+normal_texture = ExtResource("3_4q2iy")
+heightmap_enabled = true
+heightmap_scale = 25.0
+heightmap_deep_parallax = true
+heightmap_min_layers = 8
+heightmap_max_layers = 32
+uv1_triplanar = true
